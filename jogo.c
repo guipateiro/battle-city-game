@@ -8,26 +8,13 @@
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
+#include <allegro5/allegro_ttf.h>
 #include "liblista.h"
+#include "jogo.h"
 
 
-#define SPRITEJOGADOR1 "resources/tankaliado1.png"
-#define SPRITEJOGADOR2 "resources/tankaliado2.png"
-#define SPRITEINIMIGO1 "resources/tankinimigo1.png"
-#define SPRITEINIMIGO2 "resources/tenkinimigo2.png"
-#define SPRITEPAREDE "resources/Wall.png"
-#define SPRITEBARREIRA "resources/barreira.png"
-#define PREENCHIMENTO ""
-#define SPRITEAGUA "resources/agua.png"
-#define SPRITEMATO "resources/mato.png"
-#define SPRITEBLOCO "resources/bloco.png"
-#define SPRITEINSGINIA "resources/insignia.png"
-#define SPRITENUKE "resources/nuke1.png"
-#define PONTOSCANHAO 200
-#define PONTOSNUKE  500
-#define LIMITETIRO 1
 #define FREQINIMIGOS 20
-#define FREQNUKE 1
+#define FREQNUKE 5
 #define MOVIMENTACAOINIMIGOS 300
 #define CHANCEINIMIGOTIRO 60 
 
@@ -314,6 +301,30 @@ int colisao_tank_bloco(t_lista *lista1,t_lista *lista2){
 	return 0;	
 }
 
+int colisao_tank_bloco2(t_lista *lista1,t_lista *lista2){
+	int i, j, dir1, lin1, col1, dir2, lin2, col2;
+	tsprite sprite1, sprite2;
+	int tam1, tam2;
+	tamanho_lista(&tam1,lista1);
+	tamanho_lista(&tam2,lista2);
+	inicializa_atual_inicio(lista1);
+	for(i = 0 ; i < tam1 ; i++){
+		consulta_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
+		inicializa_atual_inicio(lista2);
+		for (j = 0 ; j < tam2 ; j++){
+			consulta_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
+			if (((lin1-lin2) < 47 && (lin1-lin2) > -16) && ((col1-col2) < 47 && (col1-col2) > -16)){
+				return 1;
+			}
+			else {
+				incrementa_atual(lista2);
+			}
+		}
+		incrementa_atual(lista1);
+	}
+	return 0;	
+}
+
 int colisao_tiro_parede(t_lista *lista1,t_lista *lista2){
 	int i, j, dir1, lin1, col1, dir2, lin2, col2;
 	int teste;
@@ -326,6 +337,7 @@ int colisao_tiro_parede(t_lista *lista1,t_lista *lista2){
 		teste = 0;
 		consulta_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
 		inicializa_atual_inicio(lista2);
+		tamanho_lista(&tam2,lista2);
 		for (j = 0 ; j < tam2 ; j++){
 			consulta_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
 			if (((lin1-lin2) < 19 && (lin1-lin2) > -4) && ((col1-col2) < 19 && (col1-col2) > -4)){ //valores antigos 19 e -4
@@ -346,7 +358,7 @@ int colisao_tiro_parede(t_lista *lista1,t_lista *lista2){
 
 int colisao_tiro_bloco(t_lista *lista1,t_lista *lista2){
 	int i, j, dir1, lin1, col1, dir2, lin2, col2;
-	int teste;
+	int teste ,teste2 = 0;
 	tsprite sprite1, sprite2;
 	int tam1, tam2;
 	tamanho_lista(&tam1,lista1);
@@ -361,6 +373,7 @@ int colisao_tiro_bloco(t_lista *lista1,t_lista *lista2){
 			if (((lin1-lin2) < 35 && (lin1-lin2) > -4) && ((col1-col2) < 35 && (col1-col2) > -4) ){
 				remove_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
 				teste = 1;
+				teste2 = 1;
 				break;
 			}
 			else {
@@ -370,7 +383,7 @@ int colisao_tiro_bloco(t_lista *lista1,t_lista *lista2){
 		if (!teste)
 			incrementa_atual(lista1);
 	}
-	return 0;	
+	return teste2;	
 }
 
 
@@ -479,7 +492,7 @@ void inicia_bombas(t_lista *l,t_lista *lista1,tsprite sprite){
 }
 
 
-int colisao_tank_tiro(t_lista *lista1, t_lista *lista2){
+int colisao_tank_tiro(t_lista *lista1, t_lista *lista2,t_lista *lista3,tsprite sprite3){
 	int i, j, dir1, lin1, col1, dir2, lin2, col2;
 	int teste, teste2 = 0;	
 	tsprite sprite1, sprite2;
@@ -494,10 +507,13 @@ int colisao_tank_tiro(t_lista *lista1, t_lista *lista2){
 		for (j = 0 ; j < tam2 ; j++){
 			consulta_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
 			if (((lin1-lin2) < 18 && (lin1-lin2) > -18) && ((col1-col2) < 18 && (col1-col2) > -18)){ //valores antigos 19 e -4
+				if(sprite1.invencivel == 1)
+					return 0;
 				remove_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
 				remove_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
+				insere_inicio_lista(sprite3,lin1,col1,dir1,lista3);
 				teste = 1; 
-				teste2 = 1;
+				teste2 ++;
 				break;
 			}
 			else {
@@ -510,281 +526,46 @@ int colisao_tank_tiro(t_lista *lista1, t_lista *lista2){
 	return teste2;
 }
 
+int colisao_tank_nuke(t_lista *lista1,t_lista *lista2,t_lista *lista3){
+	int tam2,tam3;
+	tam2 = 0;
+	tam3 = 0;
+	if (colisao_tank_bloco2(lista1,lista2)){
+		tamanho_lista(&tam3,lista3);
+		esvazia_lista(lista3);
+		tamanho_lista(&tam2,lista2);
+		esvazia_lista(lista2);
+	}
+	return tam3;
+}
 
+void imprime_vidas(int v,tsprite sprite,int ver){
+	int i;
 
+	for(i = 0 ; i < v ; i++){
+		if (ver == 1)
+		al_draw_bitmap(sprite.corpo1,675+i*32, 400,0);	
+	if (ver == 2)
+		al_draw_bitmap(sprite.corpo2,675+i*32, 400,0);
+	}
 
+}
 
+void imprime_explosoes(t_lista *lista1){
+	int tam,i,lin,col,dir;
+	tsprite s;  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int main(){
-
-	float angle = 0;
-	float x, y;
-    x = 320;
-    y = 446;
-    int cheatcode = 0; 
-
-    must_init(al_init(), "allegro");
-    must_init(al_init_image_addon(),"addon de imagems");
-    must_init(al_init_primitives_addon(), "addon primitives");
-    must_init(al_install_audio(),"intalacao de audio");
-    must_init(al_init_acodec_addon(),"addon acodec");
-
-    t_lista jogadores;
-	t_lista inimigos;
-	t_lista paredes;
-	t_lista barreiras;
-	t_lista aguas;
-	t_lista matos;
-	t_lista insignias;
-	t_lista nukes;
-	t_lista tiros;
-	t_lista bombas;
-	t_lista blocos;
-	
-	must_init(inicializa_lista(&jogadores),"lista jogador");
-	must_init(inicializa_lista(&inimigos),"lista inimigos");
-	must_init(inicializa_lista(&paredes),"lista paredes");
-	must_init(inicializa_lista(&barreiras),"lista barreiras");
-	must_init(inicializa_lista(&aguas),"lista aguas");
-	must_init(inicializa_lista(&matos),"lista matos");
-	must_init(inicializa_lista(&insignias),"lista insignia");
-	must_init(inicializa_lista(&nukes),"lista nukes");
-	must_init(inicializa_lista(&tiros),"lista tiros");
-	must_init(inicializa_lista(&bombas),"lista bombas");
-	must_init(inicializa_lista(&blocos),"lista blocos");
-
-	ALLEGRO_BITMAP* spritejogador1 = al_load_bitmap(SPRITEJOGADOR1);
-	ALLEGRO_BITMAP* spritejogador2 = al_load_bitmap(SPRITEJOGADOR2);
-	ALLEGRO_BITMAP* spriteinimigo1 = al_load_bitmap(SPRITEINIMIGO1);
-	ALLEGRO_BITMAP* spriteparede = al_load_bitmap(SPRITEPAREDE);
-	ALLEGRO_BITMAP* spritebarreira = al_load_bitmap(SPRITEBARREIRA);
-	ALLEGRO_BITMAP* spritepreenchimento = NULL;
-	ALLEGRO_BITMAP* spriteagua = al_load_bitmap(SPRITEAGUA);
-	ALLEGRO_BITMAP* spritemato = al_load_bitmap(SPRITEMATO);
-	ALLEGRO_BITMAP* spritebloco = al_load_bitmap(SPRITEBLOCO);
-	ALLEGRO_BITMAP* spriteinsignia = al_load_bitmap(SPRITEINSGINIA);
-	ALLEGRO_BITMAP* spritenuke  = al_load_bitmap(SPRITENUKE);
-
-	must_init(spritejogador1,"sprite jogador1");
-	must_init(spritejogador2,"sprite jogador2");
-	must_init(spriteinimigo1,"sprite jogador");
-	must_init(spriteparede,"sprite jogador");
-	must_init(spritebarreira,"sprite jogador");
-	must_init(spriteagua,"sprite jogador");
-	must_init(spritemato,"sprite jogador");
-	must_init(spritebloco,"sprite jogador");
-	must_init(spriteinsignia,"sprite jogador");
-	must_init(spritenuke,"sprite jogador");
-
-	tsprite jogador = {32,32,spritejogador1,spritejogador2,spritejogador1,cheatcode};
-	tsprite inimigo = {32,32,spriteinimigo1,spriteinimigo1,spriteinimigo1,0};
-	tsprite parede = {16,16,spriteparede,spriteparede,spriteparede,0};
-	tsprite barreira = {32,32,spritebarreira,spritebarreira,spritebarreira,1};
-	tsprite preenchimento = {4,4,spritepreenchimento,spritepreenchimento,spritepreenchimento,0};
-	tsprite agua = {32,32,spriteagua,spriteagua,spriteagua,0};
-	tsprite mato = {32,32,spritemato,spritemato,spritemato,0};
-	tsprite bloco = {16,16,spritebloco,spritebloco,spritebloco,1};
-	tsprite insignia = {32,32,spriteinsignia,spriteinsignia,spriteinsignia,0};
-	tsprite nuke = {32,32,spritenuke,spritenuke,spritenuke,0};
-
-	ALLEGRO_SAMPLE* somtiro ; 
-	ALLEGRO_SAMPLE* sommorteinimigo;
-	ALLEGRO_SAMPLE* somnuke;
-
-	cria_jogador(&jogadores, x, y,jogador);
-	cria_barreiras(&barreiras,barreira);
-  	cria_agua(&aguas,agua);
-  	cria_blocos(&blocos,bloco);
-  	cria_matos(&matos,mato);
-  	cria_paredes(&paredes,parede);
-  	cria_insignia(&insignias,insignia);
-
-  	int pontuacao = 12;
-  	int ver = 1; 
-  	int time = 1; 
-
-  	al_reserve_samples(2);
-
-  	somtiro = al_load_sample("resources/somtiro.ogg");
-  	must_init(somtiro,"som tiro");
-    
-    must_init(al_install_keyboard(), "keyboard");
-  
-    ALLEGRO_TIMER* timer = al_create_timer(1.0 / 60.0);
-    must_init(timer, "timer");
-
-    ALLEGRO_EVENT_QUEUE* queue = al_create_event_queue();
-    must_init(queue, "queue");
-
-    al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
-    al_set_new_display_option(ALLEGRO_SAMPLES, 8, ALLEGRO_SUGGEST);
-    al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
-
-    ALLEGRO_DISPLAY* disp = al_create_display(800, 640);
-    must_init(disp, "display");
-
-    ALLEGRO_FONT* font = al_create_builtin_font();
-    must_init(font, "font");
-
-    al_register_event_source(queue, al_get_keyboard_event_source());
-    al_register_event_source(queue, al_get_display_event_source(disp));
-    al_register_event_source(queue, al_get_timer_event_source(timer));
-
-    bool done = false;
-    bool redraw = true;
-    ALLEGRO_EVENT event;
-
-    ALLEGRO_KEYBOARD_STATE ks;
-
-    al_start_timer(timer);
-    int tam_tiros = 0;
-
-    while(1){
-        al_wait_for_event(queue, &event);
-        al_clear_to_color(al_map_rgb(30, 30, 30));
-
-        inicia_nuke(&nukes,nuke);
-        inicia_inimigos(&inimigos,inimigo);
-        atualiza_tiros(&tiros);
-        inicia_bombas(&inimigos,&bombas,preenchimento);
-        atualiza_inimigos(&inimigos,&paredes,&blocos,&aguas);
-		atualiza_tiros(&bombas);
-		colisao_tiro_parede(&tiros,&paredes); 
-		colisao_tiro_bloco(&tiros,&blocos);
-		colisao_tiro_parede(&bombas,&paredes);
-		colisao_tiro_bloco(&bombas,&blocos);
-		tamanho_lista(&tam_tiros,&tiros);
-		colisao_tank_tiro(&inimigos,&tiros);
-
-        switch(event.type){
-            case ALLEGRO_EVENT_TIMER:
-                al_get_keyboard_state(&ks);
-				if(al_key_down(&ks, ALLEGRO_KEY_UP)){
-					angle = 0;
-					if( y > 48)
-						y-=2;
-					atualiza_jogador(&jogadores,x,y,angle,jogador);
-					if(colisao_tank_parede(&jogadores,&paredes) || colisao_tank_bloco(&jogadores,&blocos))
-					    y+=2;
-				}
-				else if(al_key_down(&ks, ALLEGRO_KEY_DOWN)){
-					angle = 2;
-					if( y < 592)
-						y+=2;
-					atualiza_jogador(&jogadores,x,y,angle,jogador);
-					if(colisao_tank_parede(&jogadores,&paredes) || colisao_tank_bloco(&jogadores,&blocos))
-					    y-=2;
-				}
-				else if(al_key_down(&ks, ALLEGRO_KEY_LEFT)){
-					angle = 3;
-					if( x > 48)
-						x-=2;
-					atualiza_jogador(&jogadores,x,y,angle,jogador);
-					if(colisao_tank_parede(&jogadores,&paredes) || colisao_tank_bloco(&jogadores,&blocos))
-					    x+=2;
-				}
-				else if(al_key_down(&ks, ALLEGRO_KEY_RIGHT)){
-					angle = 1;
-					if( x < 592)
-						x+=2;
-					atualiza_jogador(&jogadores,x,y,angle,jogador);
-					if(colisao_tank_parede(&jogadores,&paredes) || colisao_tank_bloco(&jogadores,&blocos))
-					    x-=2;
-				}
-				if(al_key_down(&ks, ALLEGRO_KEY_SPACE) && LIMITETIRO > tam_tiros ){
-					al_play_sample(somtiro,1,0,1,ALLEGRO_PLAYMODE_ONCE,NULL);
-					cria_tiro(&tiros,x,y,angle,preenchimento);
-				} 
-				if(al_key_down(&ks, ALLEGRO_KEY_ESCAPE))
-					done = true;
-				redraw = true;
-                break;
-            case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                done = true;
-                break;
-        }
-        
-        if(done)
-            break;
-
-        done = colisao_tank_bloco(&jogadores,&aguas);
-        if(done)
-            break;
-
-        if(redraw && al_is_event_queue_empty(queue)){
-    		if (time  == 1)
-    			ver = 1;
-    		else if (time == 60)
-    			ver = 2; 
-            imprime_ambiente(&barreiras,ver);
-            imprime_ambiente(&aguas,ver);
-            imprime_ambiente(&blocos,ver);
-            imprime_ambiente(&paredes,ver);
-            imprime_ambiente(&insignias,ver);
-            imprime_ambiente(&nukes,ver);
-            imprime_tanks(&inimigos,ver);
-            imprime_tiros(&tiros,0,255,255);
-            imprime_tiros(&bombas,255,0,0);
-            imprime_tanks(&jogadores,ver);
-            al_draw_textf(font, al_map_rgb(255, 255, 255), 650 ,10, 0, "Pontuacao:");
-            al_draw_textf(font, al_map_rgb(255, 255, 255), 655, 20, 0, "%i",pontuacao);
-            imprime_ambiente(&matos,ver);
-            al_flip_display();
-            if (time == 120){
-            	time = 0;
-            }
-            time++;
-            redraw = false;
-        }
-    }
-
-    al_destroy_font(font);
-    al_destroy_display(disp);
-    al_destroy_timer(timer);
-    al_destroy_event_queue(queue);
-    al_destroy_sample(somtiro);
-
-    al_destroy_bitmap(spritejogador1);
-    al_destroy_bitmap(spritejogador2);
-    al_destroy_bitmap(spriteinimigo1);
-    al_destroy_bitmap(spriteparede);
-    al_destroy_bitmap(spritebarreira);
-    al_destroy_bitmap(spriteagua);
-    al_destroy_bitmap(spritemato);
-    al_destroy_bitmap(spriteinsignia);
-    al_destroy_bitmap(spritenuke);
-
-    destroi_lista(&jogadores);
-	destroi_lista(&inimigos);
-	destroi_lista(&paredes);
-	destroi_lista(&barreiras);
-	destroi_lista(&aguas);
-	destroi_lista(&matos);
-	destroi_lista(&insignias);
-	destroi_lista(&nukes);
-	destroi_lista(&tiros);
-	destroi_lista(&bombas);
-	destroi_lista(&blocos);
-
-    return 0;
+	tamanho_lista(&tam,lista1);
+	inicializa_atual_inicio(lista1);
+	for (i = 0 ; i < tam ; i++){
+		consulta_item_atual(&s,&lin,&col,&dir,lista1);
+		if (s.invencivel < 5){
+			al_draw_bitmap(s.corpo1,lin-14,col-14,0);
+			s.invencivel++;
+			modifica_item_atual(s,lin,col,dir,lista1);
+			incrementa_atual(lista1);
+		}
+		else 
+			remove_item_atual(&s,&lin,&col,&dir,lista1);
+	}
 }
