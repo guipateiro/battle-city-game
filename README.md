@@ -29,3 +29,25 @@ correcao de bugs com o cheatmode
 
 +explosoes
 
+/----------------------------------------------------/
+
+atualizacao dia  10/12/20:
+
++correcao de alguns problemas 
+
++eastereggs colocados 
+
++colocado comentarios no codigo explicando o que certas partes fazem 
+
++colocado tela de informacoes com creditos
+
++colocado tela de fim de jogo com scores salvos 
+
++correcoes no cheatmode 
+
++indicador de cheatmode
+
++arquivo main colocado (oq tirou um monte de gambiarras de codigo) 
+
+*mudanca no arquivo de scores 
+
