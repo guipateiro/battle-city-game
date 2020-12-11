@@ -1,7 +1,10 @@
 # battle-city-game
 Implementacao do jogo battle city em C utilizando a biblioteca ALLEGRO5
 
-para copilar: make 
+VERSAO (TEORICAMENTE) 100% FUNCIONAL  
+
+para copilar: "make" 
+para executar: "make run" ou "./battlecity"
 
 /----------------------------------------------------/
 
