@@ -1,7 +1,6 @@
-//sim o mazieiro fico maluco e decidiu q eu sei fazer um jogo em 20 dias
-//Guilherme Costa Pateiro GRR20197152 
-//programacao 2 ERE-2A
-//em homenagem ao mazieiro q acha q eu n tenho outras materias no periodo especial
+//GRR20197152 Guilherme Costa Pateiro
+//Universidade Federal do Parana , programacao2 - ERE2 A
+//ultima edicao: 9/12/2020 19:41
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_primitives.h>
@@ -13,11 +12,7 @@
 #include "jogo.h"
 
 
-#define FREQINIMIGOS 20
-#define FREQNUKE 5
-#define MOVIMENTACAOINIMIGOS 300
-#define CHANCEINIMIGOTIRO 60 
-
+//verifica se uma variavel foi iniciada, parando o programa q escrevendo o erro em stdout
 void must_init(bool test, const char *description){
     if(test) return;
 
@@ -25,7 +20,13 @@ void must_init(bool test, const char *description){
     exit(1);
 }
 
+//--------------------------------------------------------------------------------
+//                       AREA DE CRIACAO DE OBJETOS
+//--------------------------------------------------------------------------------
+//basicamente insere na lista os sprites em  uma lista 
 
+
+//cria todas as barreiras, em caso de erro, para o programa 
 void cria_barreiras(t_lista *l,tsprite sprite){
 	int i;
 	for (i = 0 ; i < 20 ; i++)
@@ -38,6 +39,7 @@ void cria_barreiras(t_lista *l,tsprite sprite){
 		must_init(insere_inicio_lista(sprite, 608 , i*32 , 0 , l),"elemento lista barreira");
 } 
 
+//cria todas as aguas, em caso de erro, para o programa 
 void cria_agua(t_lista *l,tsprite sprite){
 	int i;
 	for (i = 9 ; i < 11 ; i++){
@@ -59,6 +61,7 @@ void cria_agua(t_lista *l,tsprite sprite){
 
 }
 
+//cria todos os blocos, em caso de erro, para o programa 
 void cria_blocos(t_lista *l,tsprite sprite){
 	int i;
 	for (i = 0 ; i < 2 ; i++){
@@ -69,6 +72,7 @@ void cria_blocos(t_lista *l,tsprite sprite){
 	}
 }
 
+//cria todos os matos, em caso de erro, para o programa 
 void cria_matos(t_lista *l,tsprite sprite){
 	int i;
 	for (i = 0 ; i < 2 ; i++){
@@ -81,6 +85,7 @@ void cria_matos(t_lista *l,tsprite sprite){
 	}
 }
 
+//cria todas as paredes, em caso de erro, para o programa 
 void cria_paredes(t_lista *l,tsprite sprite){
 	int i;
 	for (i = 0 ; i < 41 ; i++){
@@ -151,107 +156,114 @@ void cria_paredes(t_lista *l,tsprite sprite){
 	}	
 }
 
+//cria todas as aguas, em caso de erro, para o programa 
 void cria_jogador(t_lista *l, int x, int y,tsprite sprite){
 	must_init(insere_inicio_lista(sprite, x, y, 0, l),"inserir jogador lista");
 }
 
+//cria todas as aguas, em caso de erro, para o programa 
+void cria_tiro(t_lista *l,int lin, int col, int dir,tsprite sprite){
+	must_init(insere_inicio_lista(sprite, lin, col , dir ,l ),"iniciar tiro lista");
+}
+
+//cria todas as aguas, em caso de erro, para o programa 
+void cria_insignia(t_lista *l,tsprite sprite){
+	must_init(insere_inicio_lista(sprite,304,576,0,l),"inserir insignia lista");
+}
+
+//cria todas as aguas, em caso de erro, para o programa 
 void atualiza_jogador(t_lista *l ,int x, int y, int dir,tsprite sprite){
 	inicializa_atual_inicio(l);
 	modifica_item_atual(sprite, x, y ,dir ,l);
 }
 
-void inicia_sprite(tsprite *sprite,int lin ,int col,int ver, int versao){
-	float dir = 1.57;
-	if (versao == 1)
-		al_draw_scaled_rotated_bitmap(sprite->corpo1,14, 14, lin, col, 1, 1, dir*ver, 0);
-	else if (versao == 2)
-		al_draw_scaled_rotated_bitmap(sprite->corpo2,14, 14, lin, col, 1, 1, dir*ver, 0);
+//cria nukes, em caso de erro, para o programa 
+void inicia_nuke(t_lista *l,tsprite sprite){
+	if (rand() % 10000 < FREQNUKE)
+		must_init(insere_inicio_lista(sprite, 32 + (rand() % 576),32 + (rand() % 576), 0, l),"elemento nuke lista");
 }
 
-void imprime_tanks(t_lista *l, int versao){
-	int tam,i,lin,col,dir;
-	tsprite s;  
-	tamanho_lista(&tam,l);
+//se um tank for criado onde ja tem um tank, retorna 1, caso contrario, retorna 0
+int colisao_criando_inimigo(int lin1,int col1,int tamlista,t_lista *l){
+	int i, lin2,col2,dir2;
+	tsprite sprite2;
 	inicializa_atual_inicio(l);
-	for (i = 0 ; i < tam ; i++){
-		consulta_item_atual(&s,&lin,&col,&dir,l);
-		inicia_sprite(&s ,lin,col,dir,versao);
-		incrementa_atual(l);
+	incrementa_atual(l);
+	for(i = 1 ; i < tamlista ; i++){
+		consulta_item_atual(&sprite2,&lin2,&col2,&dir2,l);
+		if (((lin1-lin2) < 40 && (lin1-lin2) > -14) && ((col1-col2) < 40 && (col1-col2) > -14))
+			return 1;
+	incrementa_atual(l);
+	}	
+	return 0;
+}
+
+//cria inimigos, em caso de erro, para o programa 
+//caso um inimigo seja criado onde ja tem um inimigo, cancela a criacao 
+void inicia_inimigos(t_lista *l,tsprite sprite){
+	int dir1, lin1, col1;
+	tsprite sprite1;
+	int tam1;
+	if(rand() % 10000 < FREQINIMIGOS){
+		must_init(insere_inicio_lista(sprite,48,48,rand() % 4,l),"inimigo lista");
+		tamanho_lista(&tam1,l);
+		if (colisao_criando_inimigo(48,48,tam1,l))
+			remove_inicio_lista(&sprite1,&lin1,&col1,&dir1,l);
+	}
+	if(rand() % 10000 < FREQINIMIGOS){
+		must_init(insere_inicio_lista(sprite,326,48,rand() % 4,l),"inimigo lista");
+		tamanho_lista(&tam1,l);
+		if (colisao_criando_inimigo(326,48,tam1,l))
+			remove_inicio_lista(&sprite1,&lin1,&col1,&dir1,l);
+	}
+	if(rand() % 10000 < FREQINIMIGOS){
+		must_init(insere_inicio_lista(sprite,592,48,rand() % 4,l),"inimigo lista");
+		tamanho_lista(&tam1,l);
+		if (colisao_criando_inimigo(592,48,tam1,l))
+			remove_inicio_lista(&sprite1,&lin1,&col1,&dir1,l);
 	}
 }
 
-void imprime_tiros(t_lista *l,int R, int G, int B){
-	int tam,i,lin,col,dir;
-	tsprite s;  
-
+//cria bombas a partir dos elementos de outra lista, em caso de erro, para o programa
+void inicia_bombas(t_lista *l,t_lista *lista1,tsprite sprite){
+	int dir, lin, col;
+	tsprite sprite1;
+	int i, tam;
 	tamanho_lista(&tam,l);
 	inicializa_atual_inicio(l);
 	for (i = 0 ; i < tam ; i++){
-		consulta_item_atual(&s,&lin,&col,&dir,l);
-		al_draw_filled_circle(lin, col, 4, al_map_rgb(R, G, B));
-		incrementa_atual(l);
-	}
+		consulta_item_atual(&sprite1,&lin,&col,&dir,l);
+		if (rand() % 10000 < CHANCEINIMIGOTIRO){
+			cria_tiro(lista1,lin,col,dir,sprite);
+		}
+	incrementa_atual(l);	
+	}	
 }
 
-void cria_tiro(t_lista *l,int lin, int col, int dir,tsprite sprite){
-	must_init(insere_inicio_lista(sprite, lin, col , dir ,l ),"iniciar tiro lista");
-}
 
+//-------------------------------------------------------------------
+//                          AREA DE COLISOES 
+//-------------------------------------------------------------------
 
-void atualiza_tiros(t_lista *l){
-	int tam,i,lin,col,dir;
-	tsprite s;  
+/* PSEUDOCODIGO GENERICO 
+	funcao(lista1,lista2)
+	INICIO 
+	declara variaveis 
+	descobre o tamanho de cada lista
+	percorre listas1 
+		pega elemento lista 1
+		percorre lista 2
+		pega elemento lista 2
+			verifica colisao pora caixa
+			toma uma decisao
+		incrementa lista2
+	incrementa lista1
 
-	tamanho_lista(&tam,l);
-	inicializa_atual_inicio(l);
-	for (i = 0 ; i < tam ; i++){
-		consulta_item_atual(&s,&lin,&col,&dir,l);
-		switch(dir){
-			case 0:
-				modifica_item_atual(s,lin,col-=5,dir,l);
-				break;
-			case 1:
-				modifica_item_atual(s,lin+=5,col,dir,l);
-				break;
-			case 2:
-				modifica_item_atual(s,lin,col+=5,dir,l);
-				break;
-			case 3:
-				modifica_item_atual(s,lin-=5,col,dir,l);
-				break;
-		}		
-		if (lin < 32 || col < 32 || lin > 608 || col > 608)
-			remove_item_atual(&s,&lin,&col,&dir,l);
-		else
-			incrementa_atual(l);
-	}		
-}
+*/
 
-void inicia_sprite_ambiente(tsprite *sprite,int lin ,int col,int dir,int ver){
-	if (ver == 1)
-		al_draw_bitmap(sprite->corpo1,lin, col,0);	
-	if (ver == 2)
-		al_draw_bitmap(sprite->corpo2,lin, col,0);
-
-}
-
-void imprime_ambiente(t_lista *l,int ver){
-	int tam,i,lin,col,dir;
-	tsprite s;  
-
-	tamanho_lista(&tam,l);
-	inicializa_atual_inicio(l);
-	for (i = 0 ; i < tam ; i++){
-		consulta_item_atual(&s,&lin,&col,&dir,l);
-		inicia_sprite_ambiente(&s ,lin,col,dir,ver);
-		incrementa_atual(l);
-	}
-}
-
-void cria_insignia(t_lista *l,tsprite sprite){
-	must_init(insere_inicio_lista(sprite,304,576,0,l),"inserir insignia lista");
-}
-
+//verifica e houve uma colisao entre 2 listas 
+//caso tenha uma colisao retorna 1, caso contrario retorna 0 
+//a comparacao deve ocorer entre 1 sprite de 14 pixel centrelizado se outro de 16 pixels de tamanho total 
 int colisao_tank_parede(t_lista *lista1,t_lista *lista2){
 	int i, j, dir1, lin1, col1, dir2, lin2, col2;
 	tsprite sprite1, sprite2;
@@ -276,6 +288,10 @@ int colisao_tank_parede(t_lista *lista1,t_lista *lista2){
 	return 0;	
 }
 
+//verifica e houve uma colisao entre 2 listas 
+//caso tenha uma colisao retorna 1, caso contrario retorna 0 
+//a comparacao deve ocorer entre 1 sprite de 14 pixel centrelizado se outro de 32 pixels de tamanho total 
+//caso o sprite da lista 1 seja invencivel sempre ratornara 0
 int colisao_tank_bloco(t_lista *lista1,t_lista *lista2){
 	int i, j, dir1, lin1, col1, dir2, lin2, col2;
 	tsprite sprite1, sprite2;
@@ -301,6 +317,9 @@ int colisao_tank_bloco(t_lista *lista1,t_lista *lista2){
 	return 0;	
 }
 
+//verifica e houve uma colisao entre 2 listas 
+//caso tenha uma colisao retorna 1, caso contrario retorna 0 
+//a comparacao deve ocorer entre 1 sprite de 14 pixel centrelizado se outro de 32 pixels de tamanho total 
 int colisao_tank_bloco2(t_lista *lista1,t_lista *lista2){
 	int i, j, dir1, lin1, col1, dir2, lin2, col2;
 	tsprite sprite1, sprite2;
@@ -325,6 +344,8 @@ int colisao_tank_bloco2(t_lista *lista1,t_lista *lista2){
 	return 0;	
 }
 
+//verifica e houve uma colisao entre 2 listas 
+//caso haja uma colisao, ambos os elementos da lista sao removidos
 int colisao_tiro_parede(t_lista *lista1,t_lista *lista2){
 	int i, j, dir1, lin1, col1, dir2, lin2, col2;
 	int teste;
@@ -340,7 +361,7 @@ int colisao_tiro_parede(t_lista *lista1,t_lista *lista2){
 		tamanho_lista(&tam2,lista2);
 		for (j = 0 ; j < tam2 ; j++){
 			consulta_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
-			if (((lin1-lin2) < 19 && (lin1-lin2) > -4) && ((col1-col2) < 19 && (col1-col2) > -4)){ //valores antigos 19 e -4
+			if (((lin1-lin2) < 19 && (lin1-lin2) > -4) && ((col1-col2) < 19 && (col1-col2) > -4)){ 
 				remove_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
 				remove_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
 				teste = 1; 
@@ -356,6 +377,9 @@ int colisao_tiro_parede(t_lista *lista1,t_lista *lista2){
 	return 0;	
 }
 
+//verifica e houve uma colisao entre 2 listas 
+//caso haja uma colisao, ambos os elementos da lista sao removidos
+//retorna 1 caso tenha havido uma colisao 0 caso contrario 
 int colisao_tiro_bloco(t_lista *lista1,t_lista *lista2){
 	int i, j, dir1, lin1, col1, dir2, lin2, col2;
 	int teste ,teste2 = 0;
@@ -386,51 +410,67 @@ int colisao_tiro_bloco(t_lista *lista1,t_lista *lista2){
 	return teste2;	
 }
 
-
-void inicia_nuke(t_lista *l,tsprite sprite){
-	if (rand() % 10000 < FREQNUKE)
-		must_init(insere_inicio_lista(sprite, 32 + (rand() % 576),32 + (rand() % 576), 0, l),"elemento nuke lista");
+//verifica e houve uma colisao entre 2 listas 
+//caso haja uma colisao, ambos os elementos da lista sao removidos
+//caso haja uma colisao, insere um elemento na lista 3 com o sprite 3
+//retorna o numero de colisoes que ocorreram
+int colisao_tank_tiro(t_lista *lista1, t_lista *lista2,t_lista *lista3,tsprite sprite3){
+	int i, j, dir1, lin1, col1, dir2, lin2, col2;
+	int teste, teste2 = 0;	
+	tsprite sprite1, sprite2;
+	int tam1, tam2;
+	tamanho_lista(&tam1,lista1);
+	tamanho_lista(&tam2,lista2);
+	inicializa_atual_inicio(lista1);
+	for(i = 0 ; i < tam1 ; i++){
+		teste = 0;
+		consulta_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
+		inicializa_atual_inicio(lista2);
+		for (j = 0 ; j < tam2 ; j++){
+			consulta_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
+			if (((lin1-lin2) < 18 && (lin1-lin2) > -18) && ((col1-col2) < 18 && (col1-col2) > -18)){
+				if(sprite1.invencivel == 1)
+					return 0;
+				remove_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
+				remove_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
+				insere_inicio_lista(sprite3,lin1,col1,dir1,lista3);
+				teste = 1; 
+				teste2 ++;
+				break;
+			}
+			else {
+				incrementa_atual(lista2);
+			}
+		}
+		if (!teste)
+			incrementa_atual(lista1);
+	}
+	return teste2;
 }
 
-
-int colisao_criando_inimigo(int lin1,int col1,int tamlista,t_lista *l){
-	int i, lin2,col2,dir2;
-	tsprite sprite2;
-	inicializa_atual_inicio(l);
-	incrementa_atual(l);
-	for(i = 1 ; i < tamlista ; i++){
-		consulta_item_atual(&sprite2,&lin2,&col2,&dir2,l);
-		if (((lin1-lin2) < 40 && (lin1-lin2) > -14) && ((col1-col2) < 40 && (col1-col2) > -14))
-			return 1;
-	incrementa_atual(l);
-	}	
-	return 0;
+//verifica e houve uma colisao entre 2 listas 
+//caso haja uma colisao, todos os elementos da lista 2 e lista 3 sao removidos 
+//retorna o numero de elementos removidos da lista 3
+int colisao_tank_nuke(t_lista *lista1,t_lista *lista2,t_lista *lista3){
+	int tam3;
+	tam3 = 0;
+	if (colisao_tank_bloco2(lista1,lista2)){
+		tamanho_lista(&tam3,lista3);
+		esvazia_lista(lista3);
+		esvazia_lista(lista2);
+	}
+	return tam3;
 }
 
-void inicia_inimigos(t_lista *l,tsprite sprite){
-	int dir1, lin1, col1;
-	tsprite sprite1;
-	int tam1;
-	if(rand() % 10000 < FREQINIMIGOS){
-		must_init(insere_inicio_lista(sprite,48,48,rand() % 4,l),"inimigo lista");
-		tamanho_lista(&tam1,l);
-		if (colisao_criando_inimigo(48,48,tam1,l))
-			remove_inicio_lista(&sprite1,&lin1,&col1,&dir1,l);
-	}
-	if(rand() % 10000 < FREQINIMIGOS){
-		must_init(insere_inicio_lista(sprite,326,48,rand() % 4,l),"inimigo lista");
-		tamanho_lista(&tam1,l);
-		if (colisao_criando_inimigo(326,48,tam1,l))
-			remove_inicio_lista(&sprite1,&lin1,&col1,&dir1,l);
-	}
-	if(rand() % 10000 < FREQINIMIGOS){
-		must_init(insere_inicio_lista(sprite,592,48,rand() % 4,l),"inimigo lista");
-		tamanho_lista(&tam1,l);
-		if (colisao_criando_inimigo(592,48,tam1,l))
-			remove_inicio_lista(&sprite1,&lin1,&col1,&dir1,l);
-	}
-}
+//---------------------------------------------------------------
+//					AREA DE MOVIMENTACAO
+//---------------------------------------------------------------
 
+//atualiza a movimentacao dos inimigos
+//se baseia na direcao atual do inimigo
+//puequena chance de mudar a direcao do inimigo quando ele for atualizado
+//verifica a calisao entre os inimigo e todos os blocos que impedem a movimentacao
+//impede que os inimigo morram para agua 
 void atualiza_inimigos(t_lista *l,t_lista *paredes,t_lista *blocos,t_lista *aguas){
 	int dir, lin, col;
 	tsprite sprite;
@@ -476,69 +516,45 @@ void atualiza_inimigos(t_lista *l,t_lista *paredes,t_lista *blocos,t_lista *agua
 	destroi_lista(&auxiliar);
 }
 
-void inicia_bombas(t_lista *l,t_lista *lista1,tsprite sprite){
-	int dir, lin, col;
-	tsprite sprite1;
-	int i, tam;
+
+//movimenta os tiros
+//se baseia na direcao que ele esta 
+//somente movimenta elementos em linha reta 
+void atualiza_tiros(t_lista *l){
+	int tam,i,lin,col,dir;
+	tsprite s;  
+
 	tamanho_lista(&tam,l);
 	inicializa_atual_inicio(l);
 	for (i = 0 ; i < tam ; i++){
-		consulta_item_atual(&sprite1,&lin,&col,&dir,l);
-		if (rand() % 10000 < CHANCEINIMIGOTIRO){
-			cria_tiro(lista1,lin,col,dir,sprite);
-		}
-	incrementa_atual(l);	
-	}	
-}
-
-
-int colisao_tank_tiro(t_lista *lista1, t_lista *lista2,t_lista *lista3,tsprite sprite3){
-	int i, j, dir1, lin1, col1, dir2, lin2, col2;
-	int teste, teste2 = 0;	
-	tsprite sprite1, sprite2;
-	int tam1, tam2;
-	tamanho_lista(&tam1,lista1);
-	tamanho_lista(&tam2,lista2);
-	inicializa_atual_inicio(lista1);
-	for(i = 0 ; i < tam1 ; i++){
-		teste = 0;
-		consulta_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
-		inicializa_atual_inicio(lista2);
-		for (j = 0 ; j < tam2 ; j++){
-			consulta_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
-			if (((lin1-lin2) < 18 && (lin1-lin2) > -18) && ((col1-col2) < 18 && (col1-col2) > -18)){ //valores antigos 19 e -4
-				if(sprite1.invencivel == 1)
-					return 0;
-				remove_item_atual(&sprite1,&lin1,&col1,&dir1,lista1);
-				remove_item_atual(&sprite2,&lin2,&col2,&dir2,lista2);
-				insere_inicio_lista(sprite3,lin1,col1,dir1,lista3);
-				teste = 1; 
-				teste2 ++;
+		consulta_item_atual(&s,&lin,&col,&dir,l);
+		switch(dir){
+			case 0:
+				modifica_item_atual(s,lin,col-=5,dir,l);
 				break;
-			}
-			else {
-				incrementa_atual(lista2);
-			}
-		}
-		if (!teste)
-			incrementa_atual(lista1);
-	}
-	return teste2;
+			case 1:
+				modifica_item_atual(s,lin+=5,col,dir,l);
+				break;
+			case 2:
+				modifica_item_atual(s,lin,col+=5,dir,l);
+				break;
+			case 3:
+				modifica_item_atual(s,lin-=5,col,dir,l);
+				break;
+		}		
+		if (lin < 32 || col < 32 || lin > 608 || col > 608)
+			remove_item_atual(&s,&lin,&col,&dir,l);
+		else
+			incrementa_atual(l);
+	}		
 }
 
-int colisao_tank_nuke(t_lista *lista1,t_lista *lista2,t_lista *lista3){
-	int tam2,tam3;
-	tam2 = 0;
-	tam3 = 0;
-	if (colisao_tank_bloco2(lista1,lista2)){
-		tamanho_lista(&tam3,lista3);
-		esvazia_lista(lista3);
-		tamanho_lista(&tam2,lista2);
-		esvazia_lista(lista2);
-	}
-	return tam3;
-}
 
+//---------------------------------------------------------------
+//				AREA DE IMPRESSAO 
+//---------------------------------------------------------------
+
+//imprime vidas no canto da tela, se baseia no munero V (numero de vidas)
 void imprime_vidas(int v,tsprite sprite,int ver){
 	int i;
 
@@ -551,6 +567,10 @@ void imprime_vidas(int v,tsprite sprite,int ver){
 
 }
 
+
+//imprime ,em lin/col,uma lista
+//percorre uma lista imprimindo 
+//a cada frame, incremeta  um contador em cada elemento da lista, quando o contador chegar em 5, o elemento sai da lista 
 void imprime_explosoes(t_lista *lista1){
 	int tam,i,lin,col,dir;
 	tsprite s;  
@@ -567,5 +587,70 @@ void imprime_explosoes(t_lista *lista1){
 		}
 		else 
 			remove_item_atual(&s,&lin,&col,&dir,lista1);
+	}
+}
+
+//imprime na tela, em lin/col um sprite
+//o sprite que vai ser imprido se baseia em ver 
+void inicia_sprite_ambiente(tsprite *sprite,int lin ,int col,int dir,int ver){
+	if (ver == 1)
+		al_draw_bitmap(sprite->corpo1,lin, col,0);	
+	if (ver == 2)
+		al_draw_bitmap(sprite->corpo2,lin, col,0);
+
+}
+
+//percorre uma lista, imprimindo todos os elementos dela
+void imprime_ambiente(t_lista *l,int ver){
+	int tam,i,lin,col,dir;
+	tsprite s;  
+
+	tamanho_lista(&tam,l);
+	inicializa_atual_inicio(l);
+	for (i = 0 ; i < tam ; i++){
+		consulta_item_atual(&s,&lin,&col,&dir,l);
+		inicia_sprite_ambiente(&s ,lin,col,dir,ver);
+		incrementa_atual(l);
+	}
+}
+
+//imprime na tela, em lin/col um sprite
+//o sprite que vai ser imprido se baseia em versao
+//a direcao depende de ver
+void inicia_sprite(tsprite *sprite,int lin ,int col,int ver, int versao){
+	float dir = 1.57;
+	if (versao == 1)
+		al_draw_scaled_rotated_bitmap(sprite->corpo1,14, 14, lin, col, 1, 1, dir*ver, 0);
+	else if (versao == 2)
+		al_draw_scaled_rotated_bitmap(sprite->corpo2,14, 14, lin, col, 1, 1, dir*ver, 0);
+}
+
+//percorre uma lista de tanks, imprimindo todos elementos 
+//a direcao de um sprite se baseiem dir 
+void imprime_tanks(t_lista *l, int versao){
+	int tam,i,lin,col,dir;
+	tsprite s;  
+	tamanho_lista(&tam,l);
+	inicializa_atual_inicio(l);
+	for (i = 0 ; i < tam ; i++){
+		consulta_item_atual(&s,&lin,&col,&dir,l);
+		inicia_sprite(&s ,lin,col,dir,versao);
+		incrementa_atual(l);
+	}
+}
+
+//percorre uma lista, porem a unica parte utilizada sao lin/col 
+//imprime uma circulo lo local de lin/col 
+//a cor do circulo se baseia em R G B 
+void imprime_tiros(t_lista *l,int R, int G, int B){
+	int tam,i,lin,col,dir;
+	tsprite s;  
+
+	tamanho_lista(&tam,l);
+	inicializa_atual_inicio(l);
+	for (i = 0 ; i < tam ; i++){
+		consulta_item_atual(&s,&lin,&col,&dir,l);
+		al_draw_filled_circle(lin, col, 4, al_map_rgb(R, G, B));
+		incrementa_atual(l);
 	}
 }

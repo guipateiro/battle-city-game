@@ -1,3 +1,6 @@
+//GRR20197152 Guilherme Costa Pateiro
+//Universidade Federal do Parana , programacao2 - ERE2 A
+//ultima edicao: 9/12/2020 19:36
 #ifndef MACROJOGO
 #define MACROJOGO
 
@@ -21,7 +24,7 @@
 #define SPRITENUKE1 "resources/nuke1.png"
 #define SPRITENUKE2 "resources/nuke2.png"
 #define SPRITEEXPLOSAO "resources/explosao.png"
-#define	IMAGEMEU "resources/autorfodaprakrl.jpg"
+#define	IMAGEMEU "resources/autorfodaprakrl.png"
 #define IMAGEMSCOOBY "resources/pfvmedanota.jpg"
 #define FONTECAPTUREIT1 "resources/captureit1.ttf"
 #define FONTECAPTUREIT2 "resources/captureit2.ttf"
@@ -31,6 +34,7 @@
 #define SOMINIMIGOMORRE "resources/sommorteinimigo.ogg"
 #define SOMNUKE "resources/somnuke.ogg"
 #define SOMFUNDO "resources/stickup.ogg"
+#define ARQUIVODEPONTOS "resources/highscores.txt"
 #define PONTOSCANHAO 200
 #define PONTOSNUKE  500
 #define LIMITETIRO 1
@@ -40,10 +44,13 @@ typedef struct {
   char nome[20];
 } tscore;
 
+//inicializa o allegro e imprime o menu principal 
 int menuprincipal(ALLEGRO_DISPLAY* disp);
 
+//o jogo em si
 int jogando(ALLEGRO_DISPLAY* disp,int cheatcode, int continuar);
 
-void fimdejogo1(ALLEGRO_DISPLAY* disp,int pontos,int *continuar);
+//tela de fim de jogo emtrada de pontuacoes 
+void fimdejogo(ALLEGRO_DISPLAY* disp,int pontos,int *continuar);
 
 #endif
